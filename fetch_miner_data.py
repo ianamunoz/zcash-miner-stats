@@ -90,12 +90,14 @@ with open(FILENAME, 'a') as csvfile:
         cb_data = rpc_connection.getrawtransaction(block_data['tx'][0], 1)
 
         miner = ('', 0)
+        fr = []
         others = []
         for vout in cb_data['vout']:
             addr = '#'.join(vout['scriptPubKey']['addresses'])
-            if addr in FR_ADDRS:
-                continue
             value = vout['value']
+            if addr in FR_ADDRS:
+                fr.append(value)
+                continue
             if value > miner[1]:
                 if miner[0]:
                     others.append(miner)
@@ -104,10 +106,14 @@ with open(FILENAME, 'a') as csvfile:
                 others.append((addr, value))
 
         height = block_data['height']
+        # Average over 100 blocks, to make the data more versatile
+        netsolps = rpc_connection.getnetworksolps(100, height)
         writer.writerow([
             height,
             block_data['time'],
+            netsolps,
             '%s~%s' % miner,
+            '/'.join(['%s' % v for v in fr]),
             '/'.join(['%s~%s' % other for other in others]),
         ])
 
